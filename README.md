@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+Seasons data story
+=======
+>>>>>>> 8413bea (Initial commit)
 # Vue Data Story Template
 
 This repository contains a template for setting up a purely Vue-based Cosmic Data Story using WorldWide Telescope. This template is built using components from [`@cosmicds/vue-toolkit`](https://github.com/cosmicds/vue-toolkit), which is included here as a dependency. This template sets up the basic infrastructure for a story - integrating the WorldWide Telescope component, providing some basic HTML scaffolding for placing controls in the main component, and generally providing the overall Vue project structure.
@@ -30,3 +36,7 @@ The built story is just a set of HTML/CSS/JS + any assets that you add, so it sh
 ## BrowserStack testing - CosmicDS team
 
 If you're a member of the CosmicDS team, we can perform E2E testing (both locally and in Github Actions) using BrowserStack. To activate this testing, uncomment the relevant pieces in the provided workflows. Note that you'll need to have our BrowserStack username and access key for this to work correctly. (If the repository that you're working on is part of the CosmicDS organization, you shouldn't need to add these at the repository level).
+<<<<<<< HEAD
+=======
+>>>>>>> 193ea6e (Initial commit)
+>>>>>>> 8413bea (Initial commit)
