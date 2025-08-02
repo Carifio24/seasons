@@ -1,7 +1,18 @@
 import Vue, { createApp, type Plugin } from "vue";
 
-import { FundingAcknowledgement, IconButton, LocationSelector, CreditLogos, SpeedControl } from "@cosmicds/vue-toolkit";
+import {
+  FundingAcknowledgement,
+  IconButton,
+  LocationSearch,
+  LocationSelector,
+  CreditLogos,
+  GeolocationButton,
+  SpeedControl,
+  DateTimePicker,
+} from "@cosmicds/vue-toolkit";
 import SeasonsStory from "./SeasonsStory.vue";
+
+import TimeDisplay from "./components/TimeDisplay.vue";
 
 import vuetify from "../plugins/vuetify";
 
@@ -61,6 +72,10 @@ createApp(SeasonsStory, {
   .component('credit-logos', CreditLogos)
   .component('speed-control', SpeedControl)
   .component('location-selector', LocationSelector)
+  .component('location-search', LocationSearch)
+  .component('geolocation-button', GeolocationButton)
+  .component('date-time-picker', DateTimePicker)
+  .component('time-display', TimeDisplay)
 
   // Mount
   .mount("#app");

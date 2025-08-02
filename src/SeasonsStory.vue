@@ -186,6 +186,7 @@
       </div>
       
       <!-- eslint-disable-next-line vue/no-v-model-argument -->
+      <!--
       <speed-control v-model:playing="playing" 
         :store="store"
         :color="accentColor" 
@@ -213,6 +214,19 @@
           wwtStats.rateSelections.push(rate);
         }"
         />
+      -->
+
+      <!--
+        <v-slider
+          id="time-slider"
+          v-model="sliderValue"
+          :min="sliderMin"
+          :max="sliderMax"
+          :color="accentColor"
+        >
+        </v-slider>
+      -->
+
       <div id="change-flags">
       <!--
         <icon-button
@@ -396,7 +410,7 @@ import { useDisplay } from "vuetify";
 
 import { AstroTime, Seasons } from "astronomy-engine";
 
-import { Color, Grids, Planets, Settings, WWTControl } from "@wwtelescope/engine";
+import { Color, Grids, Settings, WWTControl } from "@wwtelescope/engine";
 import { GotoRADecZoomParams, engineStore } from "@wwtelescope/engine-pinia";
 import {
   BackgroundImageset,
@@ -409,9 +423,10 @@ import {
 import { MapBoxFeature, MapBoxFeatureCollection, geocodingInfoForSearch, textForLocation } from "@cosmicds/vue-toolkit/src/mapbox";
 
 import { useTimezone } from "./timezones";
-import { makeAltAzGridText, drawPlanets, renderOneFrame, drawEcliptic, drawSkyOverlays } from "./wwt-hacks";
 import { useSun } from "./composables/useSun";
-import { SolarSystemObjects } from "@wwtelescope/engine-types";
+import { makeAltAzGridText, renderOneFrame, drawEcliptic, drawSkyOverlays } from "./wwt-hacks";
+
+import { storeToRefs } from "pinia";
 
 
 type SheetType = "text" | "video";
@@ -422,6 +437,22 @@ export interface SeasonsStoryProps {
 }
 
 const store = engineStore();
+const { currentTime } = storeToRefs(store);
+
+const selectedLocation = ref<LocationDeg>({
+  longitudeDeg: -71.1056,
+  latitudeDeg: 42.3581,
+});
+const selectedLocationText = ref("");
+const searchErrorMessage = ref<string | null>(null);
+const geocodingOptions = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  access_token: process.env.VUE_APP_MAPBOX_ACCESS_TOKEN ?? "", 
+};
+const selectedTime = ref(Date.now());
+
+const { selectedTimezone, selectedTimezoneOffset, shortTimezone, browserTimezoneOffset } = useTimezone(selectedLocation);
+const { getTimeforSunAlt } = useSun(store, selectedLocation, selectedTime, selectedTimezone);
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -430,6 +461,7 @@ const wwtSettings: Settings = Settings.get_active();
 useWWTKeyboardControls(store);
 
 const touchscreen = supportsTouchscreen();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { smAndDown, xs } = useDisplay();
 
 
@@ -455,7 +487,7 @@ const buttonColor = ref("#ffffff");
 const tab = ref(0);
 
 const datePickerOpen = ref(false);
-const playing = ref(false);
+// const playing = ref(false);
 const showLocationSelector = ref(false);
 
 const showHorizon = ref(true);
@@ -473,13 +505,29 @@ if (datesBeforeNow.length > 0) {
   });
 }
 
-const startTime = ref(0);
-const endTime = ref(0);
-
 const sortedDatesOfInterest = computed(() => {
   const entries: ([EventOfInterest, AstroTime])[] = Object.entries(datesOfInterest) as [EventOfInterest, AstroTime][];
   return entries.sort((a, b) => a[1].date.getTime() - b[1].date.getTime());
 });
+
+const sliderMin = 0;
+const sliderMax = 500;
+const startTime = ref(currentTime.value.getTime() + sliderMin);
+const endTime = ref(currentTime.value.getTime() + sliderMax);
+const sliderRange = sliderMax - sliderMin;
+
+const sliderValue = computed({
+  get() {
+    const fraction = (currentTime.value.getTime() - startTime.value) / (endTime.value - startTime.value);
+    return sliderMin + fraction * sliderRange;
+  },
+  set(value: number) {
+    const fraction = (value - sliderMin) / sliderRange;
+    const time = fraction * (endTime.value - startTime.value) + startTime.value;
+    currentTime.value = new Date(time);
+  }
+});
+console.log(sliderValue.value);
 
 const EVENTS_OF_INTEREST = [
   "mar_equinox",
@@ -511,7 +559,6 @@ function dayString(date: Date) {
 }
 
 function goToEvent(event: EventOfInterest) {
-  console.log("HERE");
   const day = datesOfInterest[event].date;
   const { rising: dayStart, setting: dayEnd } = getTimeforSunAlt(-5);
 
@@ -529,6 +576,7 @@ function goToEvent(event: EventOfInterest) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const wwtStats = markRaw({
   timeResetCount: 0,
   reverseCount: 0,
@@ -539,20 +587,7 @@ const wwtStats = markRaw({
   startTime: Date.now(),
 });
 
-const selectedLocation = ref<LocationDeg>({
-  longitudeDeg: -71.1056,
-  latitudeDeg: 42.3581,
-});
-const selectedLocationText = ref("");
-const searchErrorMessage = ref<string | null>(null);
-const geocodingOptions = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  access_token: process.env.VUE_APP_MAPBOX_ACCESS_TOKEN ?? "", 
-};
-
 updateSelectedLocationText();
-
-
 
 let userSelectedMapLocations: [number, number][] = [];
 let userSelectedSearchLocations: [number, number][] = [];
@@ -595,9 +630,8 @@ function resetData() {
   userSelectedSearchLocations = [];
 }
 
-const selectedTime = ref(Date.now());
-const { selectedTimezone, selectedTimezoneOffset, shortTimezone, browserTimezoneOffset } = useTimezone(selectedLocation);
-const { getTimeforSunAlt } = useSun(store, selectedLocation, selectedTime, selectedTimezone);
+console.log("XXXXXXX");
+
 
 const localSelectedDate = computed({
   // if you console log this date it will still say the local timezone 
@@ -619,6 +653,7 @@ const localSelectedDate = computed({
 
 onMounted(() => {
   store.waitForReady().then(async () => {
+    console.log("Start wait for ready");
     skyBackgroundImagesets.forEach(iset => backgroundImagesets.push(iset));
     store.gotoRADecZoom({
       ...props.initialCameraParams,
@@ -628,14 +663,23 @@ onMounted(() => {
     // If there are layers to set up, do that here!
     layersLoaded.value = true;
 
+    console.log("About to do WWT modifications");
+    doWWTModifications();
+
     updateWWTLocation(selectedLocation.value);
+
+    console.log("About to go to event");
+    goToEvent(sortedDatesOfInterest.value[0][0]);
+    console.log("Went to event");
 
     // Adding Alt-Az grid here
     store.applySetting(["showAltAzGrid", true]);
     store.applySetting(["altAzGridColor", Color.fromArgb(255, 255, 255, 255)]);
     store.applySetting(["localHorizonMode", true]);
 
-    doWWTModifications();
+    console.log(currentTime.value);
+    console.log("Done wait for ready");
+    console.log(process.env);
   });
 });
 
@@ -710,13 +754,16 @@ function updateWWTLocation(location: LocationDeg) {
 }
 
 function doWWTModifications() {
+  console.log("Start of WWT modifications");
   Grids._makeAltAzGridText = makeAltAzGridText;
   Grids.drawEcliptic = drawEcliptic;
 
   // We need to render one frame ahead of time
   // as there's a lot of setup done on the first frame
   // render that we need to use
-  WWTControl.singleton.renderOneFrame();
+  // WWTControl.singleton.renderOneFrame();
+
+  console.log("Rendered one frame");
 
   const boundRenderOneFrame = renderOneFrame.bind(WWTControl.singleton);
   const newFrameRender = function() { 
@@ -735,28 +782,7 @@ function doWWTModifications() {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   WWTControl.singleton.renderOneFrame = newFrameRender;
-
-  const originalUpdatePlanetLocations = Planets.updatePlanetLocations;
-  const planetScales = [
-    8,  // Sun
-    1.25,  // Mercury
-    1.25,  // Venus
-    1.25,  // Mars
-    2.5,  // Jupiter
-    4.5,  // Saturn
-    2,  // Uranus
-    2,  // Neptune
-    1,  // Pluto
-    1.25,  // Moon
-  ];
-  function newUpdatePlanetLocations(threeD: boolean) {
-    originalUpdatePlanetLocations(threeD);
-    for (let i = 0; i <= SolarSystemObjects.moon; i++) {
-      Planets._planetScales[i] = planetScales[i];
-    }
-  }
-  Planets.updatePlanetLocations = newUpdatePlanetLocations;
-  Planets.drawPlanets = drawPlanets;
+  console.log("Done doing modifications");
 }
 
 watch(selectedLocation, (location: LocationDeg) => {
@@ -966,6 +992,7 @@ body {
     text-align: end;
     color: var(--accent-color);
     font-size: min(8vw, 5vh);
+    pointer-events: auto;
 
     &:hover {
       cursor: pointer;
@@ -1121,5 +1148,10 @@ video {
     width: 70vw;
     height: 60vh;
   }
+}
+
+.v-slider {
+  width: 100%;
+  pointer-events: auto;
 }
 </style>
