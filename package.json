@@ -9,6 +9,7 @@
     "@mdi/font": "^7.4.47",
     "@wwtelescope/engine": "^7.29.1",
     "@wwtelescope/engine-pinia": "^0.9.0",
+    "@wwtelescope/engine-types": "^0.6.7",
     "astronomy-engine": "^2.1.19",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",

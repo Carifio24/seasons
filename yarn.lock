@@ -1149,7 +1149,7 @@
     pinia "^2.0.22"
     vue "^3"
 
-"@wwtelescope/engine-types@>=0.6.0", "@wwtelescope/engine-types@>=0.6.3":
+"@wwtelescope/engine-types@>=0.6.0", "@wwtelescope/engine-types@>=0.6.3", "@wwtelescope/engine-types@^0.6.7":
   version "0.6.7"
   resolved "https://registry.yarnpkg.com/@wwtelescope/engine-types/-/engine-types-0.6.7.tgz#1fa329c6ed126c3b604c156ecc3565faf56d3676"
   integrity sha512-xOI3XbxB/JzjUiyf5KDoGDFxROa7FUJ7J10wXm0u/fTBK7bTdIORGe91J4OKhF3YtDN82E8HZizlz38L+HJ/hg==

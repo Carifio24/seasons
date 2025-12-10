@@ -168,7 +168,7 @@
           </div>
           <button id="date-info" @click="showDatePicker = !showDatePicker" class="event-button info-button">
             <div class="mb-1"><strong>{{ dayString(displayedDate) }}</strong></div>       
-            <div>Length of Day: {{ formatDayLength(endTime - startTime, currentDayInfo[2]) }}</div>
+            <div>Length of Day: {{ formatDayLength(dayLength, currentDayInfo[2]) }}</div>
             <div>Distance to Sun: {{ sunDistance.toFixed(2) }} au</div>
           </button>
         
@@ -732,7 +732,8 @@ import { v4 } from "uuid";
 
 import { AstroTime, Seasons } from "astronomy-engine";
 
-import { AstroCalc, Color, Grids, Planets, Settings, SpaceTimeController, WWTControl } from "@wwtelescope/engine";
+import { AstroCalc, Color, Grids, Planets, Settings, WWTControl } from "@wwtelescope/engine";
+import { Classification } from "@wwtelescope/engine-types";
 import { GotoRADecZoomParams, engineStore } from "@wwtelescope/engine-pinia";
 import {
   BackgroundImageset,
@@ -822,6 +823,7 @@ if (pastEvents.length > 0) {
 
 const startTime = ref(0);
 const endTime = ref(0);
+const dayLength = ref(0);
 const sliderMin = 0;
 const sliderMax = 500;
 const sliderRange = sliderMax - sliderMin;
@@ -1053,13 +1055,44 @@ function formatDayLength(milliseconds: number, polarInfo: { sunAlwaysUp: boolean
   return `${hours}h ${minutes}m`;
 }
 
+function getJulian(utc: Date): number {
+  let year = utc.getUTCFullYear();
+  let month = utc.getUTCMonth()+1;
+  const day = utc.getUTCDate();
+  const hour = utc.getUTCHours();
+  const minute = utc.getUTCMinutes();
+  const second = utc.getUTCSeconds() + utc.getUTCMilliseconds() / 1000.0;
+
+  if (month == 1 || month == 2)
+  {
+    year -= 1;
+    month += 12;
+  }
+
+  const a = Math.floor(year / 100);
+  const b = 2 - a + Math.floor(a / 4.0);
+  const c = Math.floor(365.25 * year);
+  const d = Math.floor(30.6001 * (month + 1));
+
+  // gives julian date: number of days since Jan 1, 4713 BC
+  const jd = b + c + d + 1720994.5 + day + (hour + minute / 60.00 + second / 3600.00) / 24.00;
+  return jd;
+
+}
+
 function getStartAndEndTimes(day: Date): [Date, Date, { sunAlwaysUp: boolean; sunAlwaysDown: boolean }] {
   const time = day.getTime();
 
-  const offset = 0;
+  const offset = sunPlace.get_classification() == Classification.solarSystem ? 0 : 0.5;
   const type = 1;
+  const jd = getJulian(day);
+  console.log(time);
+  console.log(jd);
+  console.log(offset);
+  console.log(sunPlace.get_RA());
+  console.log(sunPlace.get_dec());
   const details = AstroCalc.getRiseTransitSet(
-    SpaceTimeController.get_jNow() + offset,
+    jd + offset,
     wwtSettings.get_locationLat(),
     -wwtSettings.get_locationLng(),
     sunPlace.get_RA(),
@@ -1071,19 +1104,20 @@ function getStartAndEndTimes(day: Date): [Date, Date, { sunAlwaysUp: boolean; su
     type,
   );
 
-  const dayStart = details.rise;
-  const dayEnd = details.set;
+  // const dayStart = details.rise;
+  // const dayEnd = details.set;
   console.log(details);
+
+  dayLength.value = details.transit * 60 * 60 * 1000;
     
-  // const { rising: dayStart, setting: dayEnd } = getTimeforSunAlt(0, time);
+  const { rising: dayStart, setting: dayEnd } = getTimeforSunAlt(0, time);
 
   let start: Date;
   let end: Date;
   let sunAlwaysUp = false;
   let sunAlwaysDown = false;
 
-  // if (dayStart === null || dayEnd === null) {
-  if (!details.bNeverRises) {
+  if (dayStart === null || dayEnd === null) {
     
     // Check if the sun is always above or always below the horizon
     const noonTime = time - (time % (24 * 60 * 60 * 1000)) - selectedTimezoneOffset.value + 12 * 60 * 60 * 1000;
@@ -1108,12 +1142,14 @@ function getStartAndEndTimes(day: Date): [Date, Date, { sunAlwaysUp: boolean; su
 }
 
 function updateSliderBounds(_newLocation: LocationDeg, oldLocation: LocationDeg) {
+  console.log("HERE");
   if (selectedEvent.value === null) {
     return;
   }
   const [start, end, _polarInfo] = getStartAndEndTimes(getDateForEvent(selectedEvent.value));
   startTime.value = start.getTime();
   endTime.value = end.getTime();
+  console.log(endTime.value - startTime.value);
 
   const oldOffset = getTimezoneOffset(tzlookup(oldLocation.latitudeDeg, oldLocation.longitudeDeg));
 
