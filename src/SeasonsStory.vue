@@ -732,7 +732,7 @@ import { v4 } from "uuid";
 
 import { AstroTime, Seasons } from "astronomy-engine";
 
-import { Color, Grids, Planets, Settings, WWTControl } from "@wwtelescope/engine";
+import { AstroCalc, Color, Grids, Planets, Settings, SpaceTimeController, WWTControl } from "@wwtelescope/engine";
 import { GotoRADecZoomParams, engineStore } from "@wwtelescope/engine-pinia";
 import {
   BackgroundImageset,
@@ -1055,14 +1055,35 @@ function formatDayLength(milliseconds: number, polarInfo: { sunAlwaysUp: boolean
 
 function getStartAndEndTimes(day: Date): [Date, Date, { sunAlwaysUp: boolean; sunAlwaysDown: boolean }] {
   const time = day.getTime();
-  const { rising: dayStart, setting: dayEnd } = getTimeforSunAlt(0, time);
+
+  const offset = 0;
+  const type = 1;
+  const details = AstroCalc.getRiseTransitSet(
+    SpaceTimeController.get_jNow() + offset,
+    wwtSettings.get_locationLat(),
+    -wwtSettings.get_locationLng(),
+    sunPlace.get_RA(),
+    sunPlace.get_dec(),
+    sunPlace.get_RA(),
+    sunPlace.get_dec(),
+    sunPlace.get_RA(),
+    sunPlace.get_dec(),
+    type,
+  );
+
+  const dayStart = details.rise;
+  const dayEnd = details.set;
+  console.log(details);
+    
+  // const { rising: dayStart, setting: dayEnd } = getTimeforSunAlt(0, time);
 
   let start: Date;
   let end: Date;
   let sunAlwaysUp = false;
   let sunAlwaysDown = false;
 
-  if (dayStart === null || dayEnd === null) {
+  // if (dayStart === null || dayEnd === null) {
+  if (!details.bNeverRises) {
     
     // Check if the sun is always above or always below the horizon
     const noonTime = time - (time % (24 * 60 * 60 * 1000)) - selectedTimezoneOffset.value + 12 * 60 * 60 * 1000;

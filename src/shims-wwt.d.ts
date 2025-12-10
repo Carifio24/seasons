@@ -9,6 +9,12 @@ declare module "@wwtelescope/engine" {
   export class AstroCalc {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     static getPlanet(jd: number, planet: number, latitudeRad: number, longitudeRad: number, height: number): { RA: number; dec: number };
+
+    /** Calculate rise/set/transit details given a time, location, and ra/dec values */
+    static getRiseTransitSet(jd: number, lat: number, lng: number,
+                           ra1: number, dec1: number, ra2: number,
+                           dec2: number, ra3: number, dec3: number,
+                           type: number): RiseSetDetails;
   }
 
   export class GlyphCache {
